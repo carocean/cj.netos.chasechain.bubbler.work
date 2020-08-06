@@ -1,0 +1,56 @@
+host: 47.104.128.137
+#host: 172.31.210.92
+port: 5675
+virtualHost: /chasechain
+user: superadmin
+pwd: 123456
+#abbitmq 自带恢复连接机制，只要为true
+automaticRecoveryEnabled: true
+#心跳时间，单位为秒，0表示不用
+requestedHeartbeat: 0
+# 连接超时时间，单位毫秒，0表示不限定
+connectionTimeout: 0
+# 连接池超时时间，单位毫秒，0表示不限定
+workPoolTimeout: 0
+exchange:
+  # 该交换器名提供给消费者绑定
+  name: chasechain.bubbler.1.amq.topic
+  # direct|fanout|topic|header
+  type: topic
+  #设置是否持久 durable 设置为 true 表示持久化， 反之是非持久,设置为true则将Exchange存盘，即使服务器重启数据也不会丢失。默认为false
+  durable: true
+  #设置是否自动删除，当最后一个绑定到Exchange上的队列删除后，自动删除该Exchange，简单来说也就是如果该Exchange没有和任何队列Queue绑定则删除，默认为false
+  autoDelete: false
+  #设置是否是RabbitMQ内部使用，默认false。如果设置为 true ，则表示是内置的交换器，客户端程序无法直接发送消息到这个交换器中，只能通过交换器路由到交换器这种方式。
+  internal: false
+  #扩展参数，用于扩展AMQP协议自制定化使用
+  arguments:
+# 当 exchange.type=fanout|header 时routing配置被忽略
+routing:
+  #为true时，如果exchange根据自身类型和消息routingKey无法找到一个合适的queue存储消息，那么broker会调用basic.return方法将消息返还给生产者;当mandatory设置为false时，出现上述情况broker会直接将消息丢弃;通俗的讲，mandatory标志告诉broker代理服务器至少将消息route到一个队列中，否则就将消息return给发送者;
+  #默认为true
+  mandatory: true
+  #基本与mandatory作用相似。
+  #在RabbitMQ3.0以后的版本里，去掉了immediate参数的支持，发送带immediate标记的publish会返回如下错误：
+  #“{amqp_error,not_implemented,“immediate=true”,‘basic.publish’}”
+  #immediate标记会影响镜像队列性能，增加代码复杂性
+  #默认为false
+  #immediate: false
+
+  # 发送消息时到其它节点的路由规则,一般对应到目的节点的队列，如果是topic其路由键则需要注意对应消费者的可能会采用的模糊匹配该生产者的routingKey
+  # 路由到相应的消费者队列，在netos.rabbitmq下，每个消费者自动创建一个队列，并绑定一个routingKey代表接收节点
+  # castmode传播模式，该配置项仅在仅在exchange的type=direct有效。
+  # unicast 单播。为默认
+  # multicast 多播。该功能等效于type=fanout，建议多播使用type=fanout
+  routingNodes:
+    #将处理结果发到队列再由本消费程序处理，这样一级一级提升
+    #注意：部署时应用motor项目的交换器的路由键集合一致
+    bubbler:
+      title: bubbler发动器
+      castmode: unicast
+      routingKeys:
+        - bubbler.1
+        - bubbler.2
+        - bubbler.3
+        - bubbler.4
+        - bubbler.5

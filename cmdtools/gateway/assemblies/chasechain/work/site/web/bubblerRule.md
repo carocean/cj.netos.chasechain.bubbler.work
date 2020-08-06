@@ -1,0 +1,83 @@
+# 冒泡规则
+
+- json格式：
+
+除全国流量池不用冒泡之外，其它级别的流量池均要配置冒泡规则
+点赞数、评论数、推荐数三个指标是或的关系，只要符合一样就可以冒泡
+```json
+{
+    "perTakeTimes":100,
+    "levels":[
+        {
+            "level":-1,
+            "desc":"常规池",
+            "innateBehaviors":{
+                "leastLikes":1,
+                "leastComments":1,
+                "leastRecommends":1
+            },
+            "innerBehaviors":{
+                "leastLikes":1,
+                "leastComments":1,
+                "leastRecommends":1
+            }
+        },
+        {
+            "level":4,
+            "desc":"地理池，乡镇级",
+            "innateBehaviors":{
+                "leastLikes":1,
+                "leastComments":1,
+                "leastRecommends":1
+            },
+            "innerBehaviors":{
+                "leastLikes":1,
+                "leastComments":1,
+                "leastRecommends":1
+            }
+        },
+        {
+            "level":3,
+            "desc":"地理池，区县级",
+            "innateBehaviors":{
+                "leastLikes":2,
+                "leastComments":2,
+                "leastRecommends":2
+            },
+            "innerBehaviors":{
+                "leastLikes":2,
+                "leastComments":2,
+                "leastRecommends":2
+            }
+        },
+        {
+            "level":2,
+            "desc":"地理池，市级",
+            "innateBehaviors":{
+                "leastLikes":3,
+                "leastComments":3,
+                "leastRecommends":3
+            },
+            "innerBehaviors":{
+                "leastLikes":3,
+                "leastComments":3,
+                "leastRecommends":3
+            }
+        },
+        {
+            "level":1,
+            "desc":"地理池，省级",
+            "innateBehaviors":{
+                "leastLikes":4,
+                "leastComments":4,
+                "leastRecommends":4
+            },
+            "innerBehaviors":{
+                "leastLikes":4,
+                "leastComments":4,
+                "leastRecommends":4
+            }
+        }
+    ]
+}
+```
