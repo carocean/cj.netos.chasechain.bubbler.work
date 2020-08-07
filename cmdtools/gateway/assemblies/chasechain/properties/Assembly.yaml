@@ -19,8 +19,8 @@ entryPoint:
     - name: mongodb
       class: cj.studio.orm.mongodb.MongoDBPlugin
       parameters:
-        #remotes: "['172.31.210.92:27017']"
-        remotes: "['47.104.128.137:27017']"
+        remotes: "['172.31.210.92:27017']"
+#        remotes: "['47.104.128.137:27017']"
         isTrustConnect: "false"
         database: "admin"
         user: 'superadmin'

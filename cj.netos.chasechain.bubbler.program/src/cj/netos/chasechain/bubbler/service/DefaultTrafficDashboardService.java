@@ -5,17 +5,13 @@ import cj.lns.chip.sos.cube.framework.IDocument;
 import cj.lns.chip.sos.cube.framework.IQuery;
 import cj.lns.chip.sos.cube.framework.TupleDocument;
 import cj.netos.chasechain.bubbler.*;
-import cj.studio.ecm.CJSystem;
 import cj.studio.ecm.annotation.CjService;
 import cj.studio.ecm.net.CircuitException;
 import com.mongodb.client.AggregateIterable;
 import org.bson.Document;
 
-import java.lang.reflect.Array;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 @CjService(name = "defaultTrafficDashboardService")
 public class DefaultTrafficDashboardService extends AbstractService implements ITrafficDashboardService {
@@ -77,7 +73,7 @@ public class DefaultTrafficDashboardService extends AbstractService implements I
 
     private ItemBehaviorPointer totalInnateBehaviors(ICube cube, long beginTime, long endTime) {
         AggregateIterable<Document> iterable = cube.aggregate(ItemBehavior._COL_NAME_INNATE, Arrays.asList(
-                Document.parse(String.format("{'$match':{'$and':[{'tuple.ctime':{'$gt':%s}},{'tuple.ctime':{'$lte':%s}}]}}",
+                Document.parse(String.format("{'$match':{'$and':[{'tuple.utime':{'$gt':%s}},{'tuple.utime':{'$lte':%s}}]}}",
                         beginTime, endTime)),
                 Document.parse(String.format("{'$group':{'_id':null,'likes':{'$sum':'$tuple.likes'},'comments':{'$sum':'$tuple.comments'},'recommends':{'$sum':'$tuple.recommends'}}}",
                         beginTime, endTime))
@@ -109,7 +105,7 @@ public class DefaultTrafficDashboardService extends AbstractService implements I
 
     private ItemBehaviorPointer totalInnerBehaviors(ICube cube, long beginTime, long endTime) {
         AggregateIterable<Document> iterable = cube.aggregate(ItemBehavior._COL_NAME_INNER, Arrays.asList(
-                Document.parse(String.format("{'$match':{'$and':[{'tuple.ctime':{'$gt':%s}},{'tuple.ctime':{'$lte':%s}}]}}",
+                Document.parse(String.format("{'$match':{'$and':[{'tuple.utime':{'$gt':%s}},{'tuple.utime':{'$lte':%s}}]}}",
                         beginTime, endTime)),
                 Document.parse(String.format("{'$group':{'_id':null,'likes':{'$sum':'$tuple.likes'},'comments':{'$sum':'$tuple.comments'},'recommends':{'$sum':'$tuple.recommends'}}}",
                         beginTime, endTime))

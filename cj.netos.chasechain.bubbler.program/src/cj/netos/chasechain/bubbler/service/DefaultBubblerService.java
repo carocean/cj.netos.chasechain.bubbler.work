@@ -86,7 +86,7 @@ public class DefaultBubblerService extends AbstractService implements IBubblerSe
         ItemBehavior innerBehavior = innerBehaviorService.getBehavior(sourcePool.getId(), item.getId());
         ItemBehavior parentInnateBehavior = new ItemBehavior();
         parentInnateBehavior.setItem(item.getId());
-        parentInnateBehavior.setCtime(System.currentTimeMillis());
+        parentInnateBehavior.setUtime(System.currentTimeMillis());
         parentInnateBehavior.setLikes(innateBehavior.getLikes() + innerBehavior.getLikes());
         parentInnateBehavior.setComments(innateBehavior.getComments() + innerBehavior.getComments());
         parentInnateBehavior.setRecommends(innateBehavior.getRecommends() + innerBehavior.getRecommends());

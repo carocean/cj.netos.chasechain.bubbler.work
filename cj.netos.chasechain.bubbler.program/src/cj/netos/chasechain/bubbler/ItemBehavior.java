@@ -7,7 +7,7 @@ public class ItemBehavior {
     long comments;
     long likes;
     long recommends;
-    long ctime;
+    long utime;
 
     public String getItem() {
         return item;
@@ -41,11 +41,11 @@ public class ItemBehavior {
         this.recommends = recommends;
     }
 
-    public long getCtime() {
-        return ctime;
+    public long getUtime() {
+        return utime;
     }
 
-    public void setCtime(long ctime) {
-        this.ctime = ctime;
+    public void setUtime(long utime) {
+        this.utime = utime;
     }
 }

@@ -67,7 +67,7 @@ public class DefaultInnateBehaviorService extends AbstractService implements IIn
 
     private List<ItemBehavior> pageBehavior(String pool, long beginTIme, int limit, int offset) throws CircuitException {
         ICube cube = cube(pool);
-        String cjql = String.format("select {'tuple':'*'}.limit(%s).skip(%s) from tuple %s %s where {'tuple.ctime':{'$gt':%s}}",
+        String cjql = String.format("select {'tuple':'*'}.limit(%s).skip(%s) from tuple %s %s where {'tuple.utime':{'$gt':%s}}",
                 limit, offset, ItemBehavior._COL_NAME_INNATE, ItemBehavior.class.getName(), beginTIme);
         IQuery<ItemBehavior> query = cube.createQuery(cjql);
         List<IDocument<ItemBehavior>> list = query.getResultList();
@@ -91,7 +91,7 @@ public class DefaultInnateBehaviorService extends AbstractService implements IIn
             behavior.setComments(0L);
             behavior.setLikes(0L);
             behavior.setItem(item);
-            behavior.setCtime(0L);//0表示不存在
+            behavior.setUtime(0L);//0表示不存在
             return behavior;
         }
         return document.tuple();
