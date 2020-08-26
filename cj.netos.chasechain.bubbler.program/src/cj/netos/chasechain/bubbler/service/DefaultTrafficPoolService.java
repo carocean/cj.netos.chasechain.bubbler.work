@@ -5,9 +5,12 @@ import cj.lns.chip.sos.cube.framework.IDocument;
 import cj.lns.chip.sos.cube.framework.IQuery;
 import cj.netos.chasechain.bubbler.*;
 import cj.studio.ecm.CJSystem;
+import cj.studio.ecm.IServiceSite;
 import cj.studio.ecm.annotation.CjService;
 import cj.studio.ecm.annotation.CjServiceRef;
+import cj.studio.ecm.annotation.CjServiceSite;
 import cj.studio.ecm.net.CircuitException;
+import cj.ultimate.util.StringUtil;
 import redis.clients.jedis.JedisCluster;
 
 import java.math.BigInteger;
@@ -26,6 +29,8 @@ public class DefaultTrafficPoolService implements ITrafficPoolService {
     IInnerBehaviorService innerBehaviorService;
     @CjServiceRef(refByName = "@.redis.cluster")
     JedisCluster jedisCluster;
+    @CjServiceSite
+    IServiceSite site;
     @Override
     public TrafficPool getTrafficPool(String trafficPool) {
         String cjql = String.format("select {'tuple':'*'} from tuple %s %s where {'tuple.id':'%s'}", TrafficPool._COL_NAME, TrafficPool.class.getName(), trafficPool);
@@ -47,8 +52,16 @@ public class DefaultTrafficPoolService implements ITrafficPoolService {
         //2.按此并集（items)求item,并将每个item插入父（如果在父中不存在），同时将源池item的行为插入到父池item的先天行为里
         synchronized (poolId) {
             doBubbleImpl(sourcePool, parentPool);
+            clearDashboardHistories(poolId);
         }
         return parentPool;
+    }
+
+    private void clearDashboardHistories(String poolId) throws CircuitException {
+        //只保留最新100条
+        String retainsStr = site.getProperty("traffic.dashboard.pointers.retains");
+        int retains = StringUtil.isEmpty(retainsStr) ? 10 : Integer.valueOf(retainsStr);
+        trafficDashboradService.clearPointersExceptTop(poolId,retains);
     }
 
     private void doBubbleImpl(TrafficPool sourcePool, TrafficPool parentPool) throws CircuitException {
@@ -62,7 +75,7 @@ public class DefaultTrafficPoolService implements ITrafficPoolService {
             jedisCluster.del(Constants.set_bubbler_items_redis_key);
             innateBehaviorService.putRedisItems(sourcePool.getId(), trafficDashBoardPointer);
             innerBehaviorService.putRedisItems(sourcePool.getId(), trafficDashBoardPointer);
-            lastItemTime = bubblerService.bubble(trafficDashBoardPointer,sourcePool, parentPool);
+            lastItemTime = bubblerService.bubble(trafficDashBoardPointer, sourcePool, parentPool);
         } catch (Exception e) {
             CircuitException ce = CircuitException.search(e);
             if (ce != null) {

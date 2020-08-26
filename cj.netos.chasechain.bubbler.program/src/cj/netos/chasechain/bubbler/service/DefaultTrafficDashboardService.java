@@ -134,4 +134,18 @@ public class DefaultTrafficDashboardService extends AbstractService implements I
         behaviorPointer.setRecommends(recommends);
         return behaviorPointer;
     }
+
+    @Override
+    public void clearPointersExceptTop(String pool,int retains) throws CircuitException {
+        ICube cube = cube(pool);
+        //在etl.work项目中的AbstractService类中已建索引为倒序
+        String cjql = String.format("select {'tuple':'*'}.sort({'tuple.lastBubbleTime':-1}).limit(1).skip(%s) from tuple %s %s where {}",retains-1, TrafficDashboardPointer._COL_NAME, TrafficDashboardPointer.class.getName());
+        IQuery<TrafficDashboardPointer> query = cube.createQuery(cjql);
+        IDocument<TrafficDashboardPointer> document=query.getSingleResult();
+        if (document == null) {
+            return;
+        }
+        TrafficDashboardPointer pointer=document.tuple();
+        cube.deleteDocs(TrafficDashboardPointer._COL_NAME, String.format("{'tuple.lastBubbleTime':{'$lt':%s}}",pointer.getLastBubbleTime()));
+    }
 }
