@@ -47,7 +47,8 @@ public class DefaultInnateBehaviorService extends AbstractService implements IIn
         } else {
             innateLikesRatio = new BigDecimal(innateBehavior.getLikes()).divide(bigItemCount, 14, RoundingMode.DOWN);
             innateCommentsRatio = new BigDecimal(innateBehavior.getComments()).divide(bigItemCount, 14, RoundingMode.DOWN);
-            innateRecommendsRatio = new BigDecimal(innateBehavior.getRecommends()).divide(bigItemCount, 14, RoundingMode.DOWN);
+            BigDecimal t = innateBehavior.getRecommends() == null ? new BigDecimal("0") : new BigDecimal(innateBehavior.getRecommends());
+            innateRecommendsRatio = t.divide(bigItemCount, 14, RoundingMode.DOWN);
         }
         while (true) {
             List<ItemBehavior> behaviors = pageBehavior(pool, lastBubbleTime, limit, offset);
