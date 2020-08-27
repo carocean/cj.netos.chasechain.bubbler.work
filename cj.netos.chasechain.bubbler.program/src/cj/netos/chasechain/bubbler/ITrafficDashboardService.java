@@ -8,6 +8,5 @@ public interface ITrafficDashboardService {
 
     void movePointer(String pool, TrafficDashboardPointer fromPointer, long lastItemTime) throws CircuitException;
 
-    void clearPointersExceptTop(String poolId, int retains) throws CircuitException;
 
 }

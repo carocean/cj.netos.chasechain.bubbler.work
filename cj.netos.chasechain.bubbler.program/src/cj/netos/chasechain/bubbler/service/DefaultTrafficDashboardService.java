@@ -7,6 +7,7 @@ import cj.lns.chip.sos.cube.framework.TupleDocument;
 import cj.netos.chasechain.bubbler.*;
 import cj.studio.ecm.annotation.CjService;
 import cj.studio.ecm.net.CircuitException;
+import cj.ultimate.gson2.com.google.gson.Gson;
 import com.mongodb.client.AggregateIterable;
 import org.bson.Document;
 
@@ -36,6 +37,7 @@ public class DefaultTrafficDashboardService extends AbstractService implements I
             pointer.setInnerBehaviorPointer(inner);
             pointer.setInnateBehaviorPointer(innate);
             pointer.setLastBubbleTime(0L);
+            cube.saveDoc(TrafficDashboardPointer._COL_NAME, new TupleDocument<>(pointer));
             return pointer;
         }
         return document.tuple();
@@ -51,19 +53,22 @@ public class DefaultTrafficDashboardService extends AbstractService implements I
             return;
         }
         ICube cube = cube(sourcePool);
-        TrafficDashboardPointer pointer = new TrafficDashboardPointer();
 
+        //统计一个时间窗口内的行为信息，并与仪表中的行为相加且更新
         BigInteger itemCount = getItemCount(cube, beginTime, endTime);
         ItemBehaviorPointer innateBehaviorPointer = totalInnateBehaviors(cube, beginTime, endTime);
         ItemBehaviorPointer innerBehaviorPointer = totalInnerBehaviors(cube, beginTime, endTime);
 
-        pointer.setLastBubbleTime(endTime);
-        pointer.setItemCount(itemCount);
-        pointer.setInnerBehaviorPointer(innerBehaviorPointer);
-        pointer.setInnateBehaviorPointer(innateBehaviorPointer);
+        itemCount = itemCount.add(fromPointer.getItemCount());
+        innateBehaviorPointer.addFrom(fromPointer.getInnateBehaviorPointer());
+        innerBehaviorPointer.addFrom(fromPointer.getInnerBehaviorPointer());
 
-        cube.saveDoc(TrafficDashboardPointer._COL_NAME, new TupleDocument<>(pointer));
+        cube.updateDocOne(TrafficDashboardPointer._COL_NAME,
+                Document.parse(String.format("{}")),
+                Document.parse(String.format("{'$set':{'tuple.itemCount':%s,'tuple.innateBehaviorPointer':%s,'tuple.innerBehaviorPointer':%s,'tuple.lastBubbleTime':%s}}",
+                        itemCount, new Gson().toJson(innateBehaviorPointer), new Gson().toJson(innerBehaviorPointer), endTime)));
     }
+
 
     private BigInteger getItemCount(ICube cube, long beginTime, long endTime) {
         long count = cube.tupleCount(ContentItem._COL_NAME, String.format("{'$and':[{'tuple.ctime':{'$gt':%s}},{'tuple.ctime':{'$lte':%s}}]}",
@@ -78,9 +83,9 @@ public class DefaultTrafficDashboardService extends AbstractService implements I
                 Document.parse(String.format("{'$group':{'_id':null,'likes':{'$sum':'$tuple.likes'},'comments':{'$sum':'$tuple.comments'},'recommends':{'$sum':'$tuple.recommends'}}}",
                         beginTime, endTime))
         ));
-        Document total=null;
+        Document total = null;
         for (Document document : iterable) {
-            total=document;
+            total = document;
             break;
         }
         BigInteger likes = null;
@@ -110,9 +115,9 @@ public class DefaultTrafficDashboardService extends AbstractService implements I
                 Document.parse(String.format("{'$group':{'_id':null,'likes':{'$sum':'$tuple.likes'},'comments':{'$sum':'$tuple.comments'},'recommends':{'$sum':'$tuple.recommends'}}}",
                         beginTime, endTime))
         ));
-        Document total=null;
+        Document total = null;
         for (Document document : iterable) {
-            total=document;
+            total = document;
             break;
         }
         BigInteger likes = null;
@@ -133,19 +138,5 @@ public class DefaultTrafficDashboardService extends AbstractService implements I
         behaviorPointer.setLikes(likes);
         behaviorPointer.setRecommends(recommends);
         return behaviorPointer;
-    }
-
-    @Override
-    public void clearPointersExceptTop(String pool,int retains) throws CircuitException {
-        ICube cube = cube(pool);
-        //在etl.work项目中的AbstractService类中已建索引为倒序
-        String cjql = String.format("select {'tuple':'*'}.sort({'tuple.lastBubbleTime':-1}).limit(1).skip(%s) from tuple %s %s where {}",retains-1, TrafficDashboardPointer._COL_NAME, TrafficDashboardPointer.class.getName());
-        IQuery<TrafficDashboardPointer> query = cube.createQuery(cjql);
-        IDocument<TrafficDashboardPointer> document=query.getSingleResult();
-        if (document == null) {
-            return;
-        }
-        TrafficDashboardPointer pointer=document.tuple();
-        cube.deleteDocs(TrafficDashboardPointer._COL_NAME, String.format("{'tuple.lastBubbleTime':{'$lt':%s}}",pointer.getLastBubbleTime()));
     }
 }

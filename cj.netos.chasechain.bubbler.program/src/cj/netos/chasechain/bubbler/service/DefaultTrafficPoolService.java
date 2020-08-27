@@ -52,16 +52,8 @@ public class DefaultTrafficPoolService implements ITrafficPoolService {
         //2.按此并集（items)求item,并将每个item插入父（如果在父中不存在），同时将源池item的行为插入到父池item的先天行为里
         synchronized (poolId) {
             doBubbleImpl(sourcePool, parentPool);
-            clearDashboardHistories(poolId);
         }
         return parentPool;
-    }
-
-    private void clearDashboardHistories(String poolId) throws CircuitException {
-        //只保留最新100条
-        String retainsStr = site.getProperty("traffic.dashboard.pointers.retains");
-        int retains = StringUtil.isEmpty(retainsStr) ? 10 : Integer.valueOf(retainsStr);
-        trafficDashboradService.clearPointersExceptTop(poolId,retains);
     }
 
     private void doBubbleImpl(TrafficPool sourcePool, TrafficPool parentPool) throws CircuitException {

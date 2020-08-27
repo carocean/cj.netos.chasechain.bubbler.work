@@ -30,4 +30,20 @@ public class ItemBehaviorPointer {
     public void setRecommends(BigInteger recommends) {
         this.recommends = recommends;
     }
+
+    public void addFrom(ItemBehaviorPointer p) {
+        likes = likes == null ? new BigInteger("0") : likes;
+        comments = comments == null ? new BigInteger("0") : comments;
+        recommends = recommends == null ? new BigInteger("0") : recommends;
+
+        if (p.likes != null) {
+            likes = likes.add(p.likes);
+        }
+        if (p.comments != null) {
+            comments = comments.add(p.comments);
+        }
+        if (p.recommends != null) {
+            recommends = recommends.add(p.recommends);
+        }
+    }
 }
