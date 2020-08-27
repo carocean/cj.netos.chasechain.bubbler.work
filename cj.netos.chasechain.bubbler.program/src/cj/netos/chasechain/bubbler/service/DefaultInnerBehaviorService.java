@@ -30,6 +30,7 @@ public class DefaultInnerBehaviorService extends AbstractService implements IInn
         BigInteger itemCount = trafficDashBoardPointer.getItemCount();
         if (itemCount.compareTo(new BigInteger("0")) == 0) {
             long count = contentItemService.totalCount(pool, lastBubbleTime);
+            count = count == 0 ? 1 : count;
             itemCount = new BigInteger(count + "");
         }
         BigDecimal bigItemCount = (new BigDecimal(itemCount));

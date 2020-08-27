@@ -45,6 +45,7 @@ public class BubblerCommand implements IConsumerCommand {
         try {
             parentPool = trafficPoolService.doBubble(poolId, trafficPool.getParent());
         } catch (CircuitException e) {
+            CJSystem.logging().error(getClass(),e);
             throw new RabbitMQException(e);
         }
         CJSystem.logging().warn(getClass(), String.format("一次冒泡完成: %s[%s]->%s[%s]", trafficPool.getTitle(), trafficPool.getId(), parentPool.getTitle(), parentPool.getId()));
