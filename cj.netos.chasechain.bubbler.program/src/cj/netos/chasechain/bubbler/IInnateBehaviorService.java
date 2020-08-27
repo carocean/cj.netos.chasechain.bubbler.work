@@ -9,4 +9,6 @@ public interface IInnateBehaviorService {
 
     void addBehavior(String pool, ItemBehavior innateBehavior) throws CircuitException;
 
+    void upateBehavior(String pool, ItemBehavior innateBehavior) throws CircuitException;
+
 }

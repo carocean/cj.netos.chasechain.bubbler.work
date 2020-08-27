@@ -8,6 +8,7 @@ import cj.netos.chasechain.bubbler.*;
 import cj.studio.ecm.annotation.CjService;
 import cj.studio.ecm.annotation.CjServiceRef;
 import cj.studio.ecm.net.CircuitException;
+import org.bson.Document;
 import redis.clients.jedis.JedisCluster;
 
 import java.math.BigDecimal;
@@ -33,6 +34,7 @@ public class DefaultInnateBehaviorService extends AbstractService implements IIn
             long count = contentItemService.totalCount(pool, lastBubbleTime);
             itemCount = new BigInteger(count + "");
         }
+        BigDecimal bigItemCount = (new BigDecimal(itemCount));
         ItemBehaviorPointer innateBehavior = trafficDashBoardPointer.getInnateBehaviorPointer();
         BigDecimal innateLikesRatio = null;
         BigDecimal innateCommentsRatio = null;
@@ -42,9 +44,9 @@ public class DefaultInnateBehaviorService extends AbstractService implements IIn
             innateCommentsRatio = new BigDecimal("0");
             innateRecommendsRatio = new BigDecimal("0");
         } else {
-            innateLikesRatio = new BigDecimal(innateBehavior.getLikes()).divide(new BigDecimal(itemCount), 14, RoundingMode.DOWN);
-            innateCommentsRatio = new BigDecimal(innateBehavior.getComments()).divide(new BigDecimal(itemCount), 14, RoundingMode.DOWN);
-            innateRecommendsRatio = new BigDecimal(innateBehavior.getRecommends()).divide(new BigDecimal(itemCount), 14, RoundingMode.DOWN);
+            innateLikesRatio = new BigDecimal(innateBehavior.getLikes()).divide(bigItemCount, 14, RoundingMode.DOWN);
+            innateCommentsRatio = new BigDecimal(innateBehavior.getComments()).divide(bigItemCount, 14, RoundingMode.DOWN);
+            innateRecommendsRatio = new BigDecimal(innateBehavior.getRecommends()).divide(bigItemCount, 14, RoundingMode.DOWN);
         }
         while (true) {
             List<ItemBehavior> behaviors = pageBehavior(pool, lastBubbleTime, limit, offset);
@@ -53,9 +55,12 @@ public class DefaultInnateBehaviorService extends AbstractService implements IIn
             }
             offset += behaviors.size();
             for (ItemBehavior behavior : behaviors) {
-                if (new BigDecimal(behavior.getLikes()).compareTo(innateLikesRatio) <= 0
-                        && new BigDecimal(behavior.getComments()).compareTo(innateCommentsRatio) <= 0
-                        && new BigDecimal(behavior.getRecommends()).compareTo(innateRecommendsRatio) <= 0) {
+                BigDecimal argLikes = new BigDecimal(behavior.getLikes()).divide(bigItemCount, 14, RoundingMode.DOWN);
+                BigDecimal argComments = new BigDecimal(behavior.getComments()).divide(bigItemCount, 14, RoundingMode.DOWN);
+                BigDecimal argRecommends = new BigDecimal(behavior.getRecommends()).divide(bigItemCount, 14, RoundingMode.DOWN);
+                if (argLikes.compareTo(innateLikesRatio) <= 0
+                        && argComments.compareTo(innateCommentsRatio) <= 0
+                        && argRecommends.compareTo(innateRecommendsRatio) <= 0) {
                     continue;
                 }
                 //将itemid添加到redis集合中
@@ -101,5 +106,15 @@ public class DefaultInnateBehaviorService extends AbstractService implements IIn
     public void addBehavior(String pool, ItemBehavior innateBehavior) throws CircuitException {
         ICube cube = cube(pool);
         cube.saveDoc(ItemBehavior._COL_NAME_INNATE, new TupleDocument<>(innateBehavior));
+    }
+
+    @Override
+    public void upateBehavior(String pool, ItemBehavior innateBehavior) throws CircuitException {
+        ICube cube = cube(pool);
+        cube.updateDocOne(ItemBehavior._COL_NAME_INNATE,
+                Document.parse(String.format("{'tuple.item':'%s'}", innateBehavior.getItem())),
+                Document.parse(String.format("{'$set':{'tuple.comments':%s,'tuple.likes':%s,'tuple.recommends':%s,'tuple.utime':%s}}",
+                        innateBehavior.getComments(), innateBehavior.getLikes(), innateBehavior.getRecommends(), System.currentTimeMillis()))
+        );
     }
 }

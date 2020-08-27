@@ -4,6 +4,6 @@ import cj.studio.ecm.net.CircuitException;
 
 public interface IBubblerService {
 
-    long bubble(TrafficDashboardPointer pointer, TrafficPool sourcePool, TrafficPool parentPool) throws CircuitException;
+    void bubble(TrafficDashboardPointer pointer, TrafficPool sourcePool, TrafficPool parentPool) throws CircuitException;
 
 }

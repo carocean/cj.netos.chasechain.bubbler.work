@@ -32,6 +32,7 @@ public class DefaultInnerBehaviorService extends AbstractService implements IInn
             long count = contentItemService.totalCount(pool, lastBubbleTime);
             itemCount = new BigInteger(count + "");
         }
+        BigDecimal bigItemCount = (new BigDecimal(itemCount));
         ItemBehaviorPointer innerBehaviorPointer = trafficDashBoardPointer.getInnerBehaviorPointer();
         BigDecimal innerLikesRatio = null;
         BigDecimal innerCommentsRatio = null;
@@ -41,9 +42,9 @@ public class DefaultInnerBehaviorService extends AbstractService implements IInn
             innerCommentsRatio = new BigDecimal("0");
             innerRecommendsRatio = new BigDecimal("0");
         } else {
-            innerLikesRatio = new BigDecimal(innerBehaviorPointer.getLikes()).divide(new BigDecimal(itemCount), 14, RoundingMode.DOWN);
-            innerCommentsRatio = new BigDecimal(innerBehaviorPointer.getComments()).divide(new BigDecimal(itemCount), 14, RoundingMode.DOWN);
-            innerRecommendsRatio = new BigDecimal(innerBehaviorPointer.getRecommends()).divide(new BigDecimal(itemCount), 14, RoundingMode.DOWN);
+            innerLikesRatio = new BigDecimal(innerBehaviorPointer.getLikes()).divide(bigItemCount, 14, RoundingMode.DOWN);
+            innerCommentsRatio = new BigDecimal(innerBehaviorPointer.getComments()).divide(bigItemCount, 14, RoundingMode.DOWN);
+            innerRecommendsRatio = new BigDecimal(innerBehaviorPointer.getRecommends()).divide(bigItemCount, 14, RoundingMode.DOWN);
         }
         while (true) {
             List<ItemBehavior> behaviors = pageBehavior(pool, lastBubbleTime, limit, offset);
@@ -52,9 +53,12 @@ public class DefaultInnerBehaviorService extends AbstractService implements IInn
             }
             offset += behaviors.size();
             for (ItemBehavior behavior : behaviors) {
-                if (new BigDecimal(behavior.getLikes()).compareTo(innerLikesRatio) <= 0
-                        && new BigDecimal(behavior.getComments()).compareTo(innerCommentsRatio) <= 0
-                        && new BigDecimal(behavior.getRecommends()).compareTo(innerRecommendsRatio) <= 0) {
+                BigDecimal argLikes = new BigDecimal(behavior.getLikes()).divide(bigItemCount, 14, RoundingMode.DOWN);
+                BigDecimal argComments = new BigDecimal(behavior.getComments()).divide(bigItemCount, 14, RoundingMode.DOWN);
+                BigDecimal argRecommends = new BigDecimal(behavior.getRecommends()).divide(bigItemCount, 14, RoundingMode.DOWN);
+                if (argLikes.compareTo(innerLikesRatio) <= 0
+                        && argComments.compareTo(innerCommentsRatio) <= 0
+                        && argRecommends.compareTo(innerRecommendsRatio) <= 0) {
                     continue;
                 }
                 //将itemid添加到redis集合中

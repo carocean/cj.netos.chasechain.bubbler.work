@@ -31,6 +31,7 @@ public class DefaultTrafficPoolService implements ITrafficPoolService {
     JedisCluster jedisCluster;
     @CjServiceSite
     IServiceSite site;
+
     @Override
     public TrafficPool getTrafficPool(String trafficPool) {
         String cjql = String.format("select {'tuple':'*'} from tuple %s %s where {'tuple.id':'%s'}", TrafficPool._COL_NAME, TrafficPool.class.getName(), trafficPool);
@@ -62,12 +63,11 @@ public class DefaultTrafficPoolService implements ITrafficPoolService {
         //流量时间窗表只有两条记录，时间早期的一条是bottom，最近的一条是top，top是不断被更新的，bottom就等着抽取时删除，删除后将立即插入新记录作为top,原top便变为bottom,
         //0为top,1为bottom
         TrafficDashboardPointer trafficDashBoardPointer = trafficDashboradService.getPointer(sourcePool.getId());
-        long lastItemTime = 0;
         try {
             jedisCluster.del(Constants.set_bubbler_items_redis_key);
             innateBehaviorService.putRedisItems(sourcePool.getId(), trafficDashBoardPointer);
             innerBehaviorService.putRedisItems(sourcePool.getId(), trafficDashBoardPointer);
-            lastItemTime = bubblerService.bubble(trafficDashBoardPointer, sourcePool, parentPool);
+            bubblerService.bubble(trafficDashBoardPointer, sourcePool, parentPool);
         } catch (Exception e) {
             CircuitException ce = CircuitException.search(e);
             if (ce != null) {
@@ -75,7 +75,7 @@ public class DefaultTrafficPoolService implements ITrafficPoolService {
             }
             throw new CircuitException("500", e);
         } finally {
-            trafficDashboradService.movePointer(sourcePool.getId(), trafficDashBoardPointer, lastItemTime);
+            trafficDashboradService.movePointer(sourcePool.getId(), trafficDashBoardPointer, System.currentTimeMillis());
         }
 
     }
