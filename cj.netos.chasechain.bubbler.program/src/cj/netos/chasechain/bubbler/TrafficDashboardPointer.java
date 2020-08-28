@@ -8,7 +8,7 @@ import java.math.RoundingMode;
 public class TrafficDashboardPointer {
     public static transient final String _COL_NAME = "traffic.dashboard.pointers";
 
-    BigInteger itemCount;//截止到lastBubbleTime时间池中内容物数量
+    BigInteger itemCount;//物品总量，包含行为为0的所有物品；采用分阶段（lastBubbleTime）累加
     ItemBehaviorPointer innateBehaviorPointer;
     ItemBehaviorPointer innerBehaviorPointer;
     long lastBubbleTime;//记录上次冒泡取抽时间,该字段不要改名，见：etl.work项目的AbstractService类
@@ -54,29 +54,17 @@ public class TrafficDashboardPointer {
         result.setInnateComments(innate.comments);
         result.setInnateLikes(innate.likes);
         result.setInnateRecommends(innate.recommends);
-        if (itemCount.compareTo(new BigInteger("0"))!=0) {
-            result.setInnateCommentRatio(new BigDecimal(innate.comments + "").divide(new BigDecimal(itemCount + ""), 14, RoundingMode.DOWN));
-            result.setInnateLikeRatio(new BigDecimal(innate.likes + "").divide(new BigDecimal(itemCount + ""), 14, RoundingMode.DOWN));
-            result.setInnateRecommendsRatio(new BigDecimal(innate.recommends + "").divide(new BigDecimal(itemCount + ""), 14, RoundingMode.DOWN));
-        }else{
-            result.setInnateCommentRatio(new BigDecimal("0.00"));
-            result.setInnateLikeRatio(new BigDecimal("0.00"));
-            result.setInnateRecommendsRatio(new BigDecimal("0.00"));
-        }
+        result.setInnateCommentRatio(innate.getCommentsRatio());
+        result.setInnateLikeRatio(innate.getLikesRatio());
+        result.setInnateRecommendsRatio(innate.getRecommendsRatio());
 
         ItemBehaviorPointer inner = innerBehaviorPointer;
         result.setInnerComments(inner.comments);
         result.setInnerLikes(inner.likes);
         result.setInnerRecommends(inner.recommends);
-        if (itemCount.compareTo(new BigInteger("0"))!=0) {
-            result.setInnerCommentRatio(new BigDecimal(inner.comments + "").divide(new BigDecimal(itemCount + ""), 14, RoundingMode.DOWN));
-            result.setInnerLikeRatio(new BigDecimal(inner.likes + "").divide(new BigDecimal(itemCount + ""), 14, RoundingMode.DOWN));
-            result.setInnerRecommendRatio(new BigDecimal(inner.recommends + "").divide(new BigDecimal(itemCount + ""), 14, RoundingMode.DOWN));
-        }else{
-            result.setInnerCommentRatio(new BigDecimal("0.00"));
-            result.setInnerLikeRatio(new BigDecimal("0.00"));
-            result.setInnerRecommendRatio(new BigDecimal("0.00"));
-        }
+        result.setInnerCommentRatio(inner.getCommentsRatio());
+        result.setInnerLikeRatio(inner.getLikesRatio());
+        result.setInnerRecommendRatio(inner.getRecommendsRatio());
         return result;
     }
 }

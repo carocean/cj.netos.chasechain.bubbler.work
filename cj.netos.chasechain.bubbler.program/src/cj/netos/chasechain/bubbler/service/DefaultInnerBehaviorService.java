@@ -19,34 +19,15 @@ import java.util.List;
 public class DefaultInnerBehaviorService extends AbstractService implements IInnerBehaviorService {
     @CjServiceRef(refByName = "@.redis.cluster")
     JedisCluster jedisCluster;
-    @CjServiceRef(refByName = "defaultContentItemService")
-    IContentItemService contentItemService;
+
 
     @Override
     public void putRedisItems(String pool, TrafficDashboardPointer trafficDashBoardPointer) throws CircuitException {
         int limit = 100;
         int offset = 0;
         long lastBubbleTime = trafficDashBoardPointer.getLastBubbleTime();
-        BigInteger itemCount = trafficDashBoardPointer.getItemCount();
-        if (itemCount.compareTo(new BigInteger("0")) == 0) {
-            long count = contentItemService.totalCount(pool, lastBubbleTime);
-            count = count == 0 ? 1 : count;
-            itemCount = new BigInteger(count + "");
-        }
-        BigDecimal bigItemCount = (new BigDecimal(itemCount));
+
         ItemBehaviorPointer innerBehaviorPointer = trafficDashBoardPointer.getInnerBehaviorPointer();
-        BigDecimal innerLikesRatio = null;
-        BigDecimal innerCommentsRatio = null;
-        BigDecimal innerRecommendsRatio = null;
-        if (itemCount.compareTo(new BigInteger("0")) == 0) {
-            innerLikesRatio = new BigDecimal("0");
-            innerCommentsRatio = new BigDecimal("0");
-            innerRecommendsRatio = new BigDecimal("0");
-        } else {
-            innerLikesRatio = new BigDecimal(innerBehaviorPointer.getLikes()).divide(bigItemCount, 14, RoundingMode.DOWN);
-            innerCommentsRatio = new BigDecimal(innerBehaviorPointer.getComments()).divide(bigItemCount, 14, RoundingMode.DOWN);
-            innerRecommendsRatio = new BigDecimal(innerBehaviorPointer.getRecommends()).divide(bigItemCount, 14, RoundingMode.DOWN);
-        }
         while (true) {
             List<ItemBehavior> behaviors = pageBehavior(pool, lastBubbleTime, limit, offset);
             if (behaviors.isEmpty()) {
@@ -54,12 +35,9 @@ public class DefaultInnerBehaviorService extends AbstractService implements IInn
             }
             offset += behaviors.size();
             for (ItemBehavior behavior : behaviors) {
-                BigDecimal argLikes = new BigDecimal(behavior.getLikes()).divide(bigItemCount, 14, RoundingMode.DOWN);
-                BigDecimal argComments = new BigDecimal(behavior.getComments()).divide(bigItemCount, 14, RoundingMode.DOWN);
-                BigDecimal argRecommends = new BigDecimal(behavior.getRecommends()).divide(bigItemCount, 14, RoundingMode.DOWN);
-                if (argLikes.compareTo(innerLikesRatio) <= 0
-                        && argComments.compareTo(innerCommentsRatio) <= 0
-                        && argRecommends.compareTo(innerRecommendsRatio) <= 0) {
+                if (new BigDecimal(behavior.getLikes()).compareTo(innerBehaviorPointer.getLikesRatio()) <= 0
+                        && new BigDecimal(behavior.getComments()).compareTo(innerBehaviorPointer.getCommentsRatio()) <= 0
+                        && new BigDecimal(behavior.getRecommends()).compareTo(innerBehaviorPointer.getRecommendsRatio()) <= 0) {
                     continue;
                 }
                 //将itemid添加到redis集合中

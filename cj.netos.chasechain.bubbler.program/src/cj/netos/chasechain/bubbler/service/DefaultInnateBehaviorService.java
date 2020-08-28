@@ -12,8 +12,6 @@ import org.bson.Document;
 import redis.clients.jedis.JedisCluster;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,35 +19,14 @@ import java.util.List;
 public class DefaultInnateBehaviorService extends AbstractService implements IInnateBehaviorService {
     @CjServiceRef(refByName = "@.redis.cluster")
     JedisCluster jedisCluster;
-    @CjServiceRef(refByName = "defaultContentItemService")
-    IContentItemService contentItemService;
 
     @Override
     public void putRedisItems(String pool, TrafficDashboardPointer trafficDashBoardPointer) throws CircuitException {
         int limit = 100;
         int offset = 0;
         long lastBubbleTime = trafficDashBoardPointer.getLastBubbleTime();
-        BigInteger itemCount = trafficDashBoardPointer.getItemCount();
-        if (itemCount.compareTo(new BigInteger("0")) == 0) {
-            long count = contentItemService.totalCount(pool, lastBubbleTime);
-            count = count == 0 ? 1 : count;
-            itemCount = new BigInteger(count + "");
-        }
-        BigDecimal bigItemCount = (new BigDecimal(itemCount));
+
         ItemBehaviorPointer innateBehavior = trafficDashBoardPointer.getInnateBehaviorPointer();
-        BigDecimal innateLikesRatio = null;
-        BigDecimal innateCommentsRatio = null;
-        BigDecimal innateRecommendsRatio = null;
-        if (itemCount.compareTo(new BigInteger("0")) == 0) {
-            innateLikesRatio = new BigDecimal("0");
-            innateCommentsRatio = new BigDecimal("0");
-            innateRecommendsRatio = new BigDecimal("0");
-        } else {
-            innateLikesRatio = new BigDecimal(innateBehavior.getLikes()).divide(bigItemCount, 14, RoundingMode.DOWN);
-            innateCommentsRatio = new BigDecimal(innateBehavior.getComments()).divide(bigItemCount, 14, RoundingMode.DOWN);
-            BigDecimal t = innateBehavior.getRecommends() == null ? new BigDecimal("0") : new BigDecimal(innateBehavior.getRecommends());
-            innateRecommendsRatio = t.divide(bigItemCount, 14, RoundingMode.DOWN);
-        }
         while (true) {
             List<ItemBehavior> behaviors = pageBehavior(pool, lastBubbleTime, limit, offset);
             if (behaviors.isEmpty()) {
@@ -57,12 +34,9 @@ public class DefaultInnateBehaviorService extends AbstractService implements IIn
             }
             offset += behaviors.size();
             for (ItemBehavior behavior : behaviors) {
-                BigDecimal argLikes = new BigDecimal(behavior.getLikes()).divide(bigItemCount, 14, RoundingMode.DOWN);
-                BigDecimal argComments = new BigDecimal(behavior.getComments()).divide(bigItemCount, 14, RoundingMode.DOWN);
-                BigDecimal argRecommends = new BigDecimal(behavior.getRecommends()).divide(bigItemCount, 14, RoundingMode.DOWN);
-                if (argLikes.compareTo(innateLikesRatio) <= 0
-                        && argComments.compareTo(innateCommentsRatio) <= 0
-                        && argRecommends.compareTo(innateRecommendsRatio) <= 0) {
+                if (new BigDecimal(behavior.getLikes()).compareTo(innateBehavior.getLikesRatio()) <= 0
+                        && new BigDecimal(behavior.getComments()).compareTo(innateBehavior.getCommentsRatio()) <= 0
+                        && new BigDecimal(behavior.getRecommends()).compareTo(innateBehavior.getRecommendsRatio()) <= 0) {
                     continue;
                 }
                 //将itemid添加到redis集合中
