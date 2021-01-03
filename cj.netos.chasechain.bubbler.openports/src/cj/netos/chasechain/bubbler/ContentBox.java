@@ -12,6 +12,15 @@ public class ContentBox {
     String upstreamPool;//来自上游的流量池
     boolean isBubbled;//是否已冒泡了
     long ctime;
+    int isChanged;
+
+    public int getIsChanged() {
+        return isChanged;
+    }
+
+    public void setIsChanged(int isChanged) {
+        this.isChanged = isChanged;
+    }
 
     public String getId() {
         return id;

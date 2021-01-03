@@ -27,6 +27,7 @@ public class DefaultBubblerService extends AbstractService implements IBubblerSe
     IInnerBehaviorService innerBehaviorService;
     @CjServiceRef(refByName = "defaultTrafficPersonService")
     ITrafficPersonService trafficPersonService;
+
     @Override
     public void bubble(TrafficDashboardPointer pointer, TrafficPool sourcePool, TrafficPool parentPool) throws CircuitException {
         //获取需要抽取的item ids
@@ -37,7 +38,7 @@ public class DefaultBubblerService extends AbstractService implements IBubblerSe
         CJSystem.logging().info(getClass(), String.format("发现可冒泡的内容项条目数是：%s 在流量池：%s[%s]:", itemIds.size(), sourcePool.getTitle(), sourcePool.getId()));
         int limit = 100;
         long offset = 0;
-        long realBubbleItemCount=0;
+        long realBubbleItemCount = 0;
         while (true) {
             List<ContentItem> items = pageItem(sourceCube, itemIds, limit, offset);
             if (items.isEmpty()) {
@@ -75,8 +76,9 @@ public class DefaultBubblerService extends AbstractService implements IBubblerSe
         if (trafficPersonService.existsPerson(parentPool.getId(), item.getPointer().getCreator())) {
             return;
         }
-        trafficPersonService.addTrafficPerson(parentPool.getId(),item.getPointer().getCreator());
+        trafficPersonService.addTrafficPerson(parentPool.getId(), item.getPointer().getCreator());
     }
+
     private void updateBehaviors(TrafficPool sourcePool, ContentItem item, TrafficPool parentPool) throws CircuitException {
         ItemBehavior innateBehavior = innateBehaviorService.getBehavior(sourcePool.getId(), item.getId());
         ItemBehavior innerBehavior = innerBehaviorService.getBehavior(sourcePool.getId(), item.getId());
@@ -88,6 +90,7 @@ public class DefaultBubblerService extends AbstractService implements IBubblerSe
         parentInnateBehavior.setRecommends(innateBehavior.getRecommends() + innerBehavior.getRecommends());
         innateBehaviorService.upateBehavior(parentPool.getId(), parentInnateBehavior);
     }
+
     private void copyBehaviors(TrafficPool sourcePool, ContentItem item, TrafficPool parentPool) throws CircuitException {
         ItemBehavior innateBehavior = innateBehaviorService.getBehavior(sourcePool.getId(), item.getId());
         ItemBehavior innerBehavior = innerBehaviorService.getBehavior(sourcePool.getId(), item.getId());
@@ -102,11 +105,22 @@ public class DefaultBubblerService extends AbstractService implements IBubblerSe
 
 
     private void copyBox(TrafficPool sourcePool, ICube sourceCube, ContentItem item, TrafficPool parentPool, ICube parentCube) {
+        ContentBox box = getContentBox(sourceCube, item.getBox());
         //由于一个内容盒包含多个消息，所以冒泡时要检查是否盒子已存在了，不存在才拷贝
         if (parentCube.tupleCount(ContentBox._COL_NAME, String.format("{'tuple.id':'%s'}", item.getBox())) > 0) {
+           if(box.getIsChanged()==1){
+               //如果源内容盒变更了，则更新父内容盒
+               parentCube.updateDocOne(ContentBox._COL_NAME,
+                       Document.parse(String.format("{'tuple.id':'%s'}", item.getBox())),
+                       Document.parse(String.format("{'$set':{'tuple.pointer.title':'%s','tuple.pointer.leading':'%s','tuple.isChanged':1}}", box.getPointer().getTitle(), box.getPointer().getLeading()))
+               );
+               sourceCube.updateDocOne(ContentBox._COL_NAME,
+                       Document.parse(String.format("{'tuple.id':'%s'}", item.getBox())),
+                       Document.parse("{'$set':{'tuple.isChanged':0}}")
+               );
+           }
             return;
         }
-        ContentBox box = getContentBox(sourceCube, item.getBox());
         ContentBox newBox = new ContentBox();
         newBox.setCtime(System.currentTimeMillis());
         newBox.setUpstreamPool(sourcePool.getId());
@@ -148,7 +162,7 @@ public class DefaultBubblerService extends AbstractService implements IBubblerSe
         );
     }
 
-    private List<ContentItem> pageItem(ICube sourceCube,  Set<String> itemIds, int limit, long offset) {
+    private List<ContentItem> pageItem(ICube sourceCube, Set<String> itemIds, int limit, long offset) {
         String cjql = String.format("select {'tuple':'*'}.limit(%s).skip(%s) from tuple %s %s where {'tuple.id':{'$in':%s}}",
                 limit, offset, ContentItem._COL_NAME, ContentItem.class.getName(), new Gson().toJson(itemIds));
         IQuery<ContentItem> query = sourceCube.createQuery(cjql);

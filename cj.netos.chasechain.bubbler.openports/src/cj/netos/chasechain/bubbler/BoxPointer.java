@@ -4,8 +4,17 @@ public class BoxPointer {
     String id;
     String title;
     String type;
+    String leading;
     String creator;
     long ctime;
+
+    public String getLeading() {
+        return leading;
+    }
+
+    public void setLeading(String leading) {
+        this.leading = leading;
+    }
 
     public String getId() {
         return id;
